@@ -11,8 +11,16 @@ export default function MapPage() {
   };
 
   return (
-    <div className="h-[calc(100vh-8rem)]" dir="rtl">
-      <MapView onAddClick={handleMapClick} />
+    <div className="h-full w-full flex flex-col" dir="rtl">
+      {/* عنوان الصفحة */}
+      <h1 className="text-2xl font-bold mb-4 px-4 pt-4">الخريطة</h1>
+      
+      {/* حاوية الخريطة */}
+      <div className="flex-1 relative rounded-lg overflow-hidden shadow-lg m-4">
+        <MapView onAddClick={handleMapClick} />
+      </div>
+
+      {/* النافذة المنبثقة لإضافة جهاز */}
       {showAddModal && selectedCoords && (
         <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
           <div className="bg-white p-6 rounded-lg w-96">
