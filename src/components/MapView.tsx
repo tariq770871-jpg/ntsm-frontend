@@ -11,7 +11,6 @@ export default function MapView({ onAddClick }: Props) {
   const containerRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    if (!containerRef.current || mapRef.current) return;
 
     const map = L.map(containerRef.current).setView([15.3694, 44.1910], 7);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {

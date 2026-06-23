@@ -1,43 +1,34 @@
-import { useState } from 'react';
-import MapView from '../components/MapView';
+import React from 'react';
+import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
+import 'leaflet/dist/leaflet.css';
+import L from 'leaflet';
+
+delete (L.Icon.Default.prototype as any)._getIconUrl;
+L.Icon.Default.mergeOptions({
+  iconRetinaUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon-2x.png',
+  iconUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-icon.png',
+  shadowUrl: 'https://unpkg.com/leaflet@1.7.1/dist/images/marker-shadow.png',
+});
+
+const engineers = [
+  { id: 1, name: 'م. أحمد', lat: 24.7136, lng: 46.6753, status: 'online' },
+  { id: 2, name: 'م. خالد', lat: 24.7500, lng: 46.7000, status: 'offline' },
+];
 
 export default function MapPage() {
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [selectedCoords, setSelectedCoords] = useState<{lat: number; lng: number} | null>(null);
-
-  const handleMapClick = (lat: number, lng: number) => {
-    setSelectedCoords({ lat, lng });
-    setShowAddModal(true);
-  };
-
   return (
-    <div className="h-full w-full flex flex-col" dir="rtl">
-      {/* عنوان الصفحة */}
-      <h1 className="text-2xl font-bold mb-4 px-4 pt-4">الخريطة</h1>
-      
-      {/* حاوية الخريطة */}
-      <div className="flex-1 relative rounded-lg overflow-hidden shadow-lg m-4">
-        <MapView onAddClick={handleMapClick} />
-      </div>
-
-      {/* النافذة المنبثقة لإضافة جهاز */}
-      {showAddModal && selectedCoords && (
-        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-          <div className="bg-white p-6 rounded-lg w-96">
-            <h2 className="text-xl font-bold mb-4">إضافة جهاز</h2>
-            <p className="mb-2">خط العرض: {selectedCoords.lat.toFixed(6)}</p>
-            <p className="mb-4">خط الطول: {selectedCoords.lng.toFixed(6)}</p>
-            <div className="flex gap-2">
-              <button onClick={() => setShowAddModal(false)} className="bg-blue-600 text-white px-4 py-2 rounded">
-                إضافة
-              </button>
-              <button onClick={() => setShowAddModal(false)} className="bg-gray-300 px-4 py-2 rounded">
-                إغلاق
-              </button>
-            </div>
-          </div>
-        </div>
-      )}
+    <div className="h-[calc(100vh-120px)] rounded-lg overflow-hidden shadow-lg">
+      <MapContainer center={[24.7136, 46.6753]} zoom={12} className="h-full w-full z-0">
+        <TileLayer url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png" />
+        {engineers.map(eng => (
+          <Marker key={eng.id} position={[eng.lat, eng.lng]}>
+            <Popup>
+              <strong>{eng.name}</strong><br />
+              الحالة: <span className={eng.status === 'online' ? 'text-green-500' : 'text-red-500'}>{eng.status}</span>
+            </Popup>
+          </Marker>
+        ))}
+      </MapContainer>
     </div>
   );
 }

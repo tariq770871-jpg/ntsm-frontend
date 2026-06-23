@@ -1,54 +1,74 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import axios from 'axios';
+import { Wrench, Calendar, User } from 'lucide-react';
+
+interface MaintenanceLog {
+  id: string;
+  deviceName: string;
+  description: string;
+  engineerName: string;
+  status: string;
+  createdAt: string;
+}
 
 export default function MaintenancePage() {
-  const [form, setForm] = useState({
-    deviceId: '',
-    costFuel: '',
-    costParts: '',
-    costOther: '',
-    description: '',
-  });
+  const [logs, setLogs] = useState<MaintenanceLog[]>([]);
+  const [loading, setLoading] = useState(true);
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    await axios.post(`${import.meta.env.VITE_API_URL}/maintenance-logs`, {
-      ...form,
-      costFuel: parseFloat(form.costFuel) || 0,
-      costParts: parseFloat(form.costParts) || 0,
-      costOther: parseFloat(form.costOther) || 0,
-    });
-    setForm({ deviceId: '', costFuel: '', costParts: '', costOther: '', description: '' });
-  };
+  useEffect(() => {
+    axios.get(`${import.meta.env.VITE_API_URL}/maintenance-logs`)
+      .then(res => setLogs(res.data))
+      .catch(() => setLogs([]))
+      .finally(() => setLoading(false));
+  }, []);
+
+  if (loading) {
+    return (
+      <div className="flex items-center justify-center h-64">
+        <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
+      </div>
+    );
+  }
 
   return (
-    <div dir="rtl">
-      <h1 className="text-2xl font-bold mb-6">تكاليف الصيانة</h1>
-      <form onSubmit={handleSubmit} className="bg-white p-6 rounded shadow max-w-lg">
-        <div className="grid grid-cols-2 gap-4 mb-4">
-          <div>
-            <label className="block text-sm mb-1">الوقود</label>
-            <input type="number" value={form.costFuel} onChange={e => setForm({...form, costFuel: e.target.value})} className="w-full p-2 border rounded text-left" />
+    <div>
+      <h1 className="text-2xl font-bold mb-6">سجلات الصيانة</h1>
+      <div className="space-y-4">
+        {logs.length === 0 ? (
+          <div className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-8 text-center text-slate-500">
+            لا توجد سجلات صيانة
           </div>
-          <div>
-            <label className="block text-sm mb-1">قطع الغيار</label>
-            <input type="number" value={form.costParts} onChange={e => setForm({...form, costParts: e.target.value})} className="w-full p-2 border rounded text-left" />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">أخرى</label>
-            <input type="number" value={form.costOther} onChange={e => setForm({...form, costOther: e.target.value})} className="w-full p-2 border rounded text-left" />
-          </div>
-          <div>
-            <label className="block text-sm mb-1">معرف الجهاز</label>
-            <input type="text" value={form.deviceId} onChange={e => setForm({...form, deviceId: e.target.value})} className="w-full p-2 border rounded text-left" required />
-          </div>
-        </div>
-        <div className="mb-4">
-          <label className="block text-sm mb-1">الوصف</label>
-          <textarea value={form.description} onChange={e => setForm({...form, description: e.target.value})} className="w-full p-2 border rounded text-right" rows={3} />
-        </div>
-        <button type="submit" className="bg-blue-600 text-white px-6 py-2 rounded hover:bg-blue-700">حفظ</button>
-      </form>
+        ) : (
+          logs.map((log) => (
+            <div key={log.id} className="bg-slate-800/50 border border-slate-700/50 rounded-xl p-4">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center gap-2">
+                  <Wrench className="w-5 h-5 text-cyan-400" />
+                  <span className="font-bold text-white">{log.deviceName}</span>
+                </div>
+                <span className={`px-2 py-1 rounded-full text-xs ${
+                  log.status === 'completed' ? 'bg-emerald-500/10 text-emerald-400' :
+                  log.status === 'in-progress' ? 'bg-orange-500/10 text-orange-400' :
+                  'bg-blue-500/10 text-blue-400'
+                }`}>
+                  {log.status === 'completed' ? 'مكتمل' : log.status === 'in-progress' ? 'قيد العمل' : 'معلق'}
+                </span>
+              </div>
+              <p className="text-slate-300 text-sm mb-3">{log.description}</p>
+              <div className="flex items-center gap-4 text-xs text-slate-500">
+                <div className="flex items-center gap-1">
+                  <User className="w-4 h-4" />
+                  {log.engineerName}
+                </div>
+                <div className="flex items-center gap-1">
+                  <Calendar className="w-4 h-4" />
+                  {new Date(log.createdAt).toLocaleString('ar-SA')}
+                </div>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
     </div>
   );
 }
