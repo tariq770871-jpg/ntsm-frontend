@@ -15,6 +15,8 @@ interface AuthContextType {
   loading: boolean;
 }
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 const AuthContext = createContext<AuthContextType | null>(null);
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
@@ -23,23 +25,35 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   useEffect(() => {
     const token = localStorage.getItem('token');
-    if (token) {
+    if (token && API_URL) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      axios.get(`${import.meta.env.VITE_API_URL}/users/me`).then(res => {
-        setUser(res.data);
-      }).catch(() => {
-        localStorage.removeItem('token');
-      }).finally(() => setLoading(false));
+      axios.get(`${API_URL}/users/me`)
+        .then(res => {
+          if (res.data && (res.data.id || res.data.user)) {
+            setUser(res.data.user || res.data);
+          }
+        })
+        .catch(() => {
+          localStorage.removeItem('token');
+          delete axios.defaults.headers.common['Authorization'];
+        })
+        .finally(() => setLoading(false));
     } else {
       setLoading(false);
     }
   }, []);
 
   const login = async (phone: string, password: string) => {
-    const res = await axios.post(`${import.meta.env.VITE_API_URL}/auth/login`, { phone, password });
-    localStorage.setItem('token', res.data.access_token);
-    axios.defaults.headers.common['Authorization'] = `Bearer ${res.data.access_token}`;
-    setUser(res.data.user);
+    if (!API_URL) throw new Error('API URL not configured');
+    const res = await axios.post(`${API_URL}/auth/login`, { phone, password });
+    const token = res.data.access_token;
+    const userData = res.data.user;
+    if (!token) throw new Error('Login failed: no token received');
+    localStorage.setItem('token', token);
+    axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+    if (userData) {
+      setUser(userData);
+    }
   };
 
   const logout = () => {
