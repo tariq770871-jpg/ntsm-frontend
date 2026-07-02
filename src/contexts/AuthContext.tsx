@@ -4,13 +4,14 @@ import axios from 'axios';
 interface User {
   id: string;
   name: string;
-  role: 'admin' | 'support' | 'engineer';
+  username: string;
+  role: string;
   phone: string;
 }
 
 interface AuthContextType {
   user: User | null;
-  login: (phone: string, password: string) => Promise<void>;
+  login: (username: string, password: string) => Promise<void>;
   logout: () => void;
   loading: boolean;
 }
@@ -18,6 +19,17 @@ interface AuthContextType {
 const API_URL = import.meta.env.VITE_API_URL || '';
 
 const AuthContext = createContext<AuthContextType | null>(null);
+
+// Map Express backend user to frontend user format
+function mapUser(data: any): User {
+  return {
+    id: String(data.id || ''),
+    name: data.full_name || data.name || data.username || '',
+    username: data.username || '',
+    role: data.role || 'technician',
+    phone: data.phone || '',
+  };
+}
 
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
@@ -27,10 +39,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const token = localStorage.getItem('token');
     if (token && API_URL) {
       axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
-      axios.get(`${API_URL}/users/me`)
+      axios.get(`${API_URL}/auth/me`)
         .then(res => {
-          if (res.data && (res.data.id || res.data.user)) {
-            setUser(res.data.user || res.data);
+          if (res.data?.success && res.data?.data) {
+            setUser(mapUser(res.data.data));
           }
         })
         .catch(() => {
@@ -43,16 +55,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, []);
 
-  const login = async (phone: string, password: string) => {
+  const login = async (username: string, password: string) => {
     if (!API_URL) throw new Error('API URL not configured');
-    const res = await axios.post(`${API_URL}/auth/login`, { phone, password });
-    const token = res.data.access_token;
-    const userData = res.data.user;
+
+    const res = await axios.post(`${API_URL}/auth/login`, { username, password });
+
+    // Express backend format: { success: true, data: { token, user } }
+    const responseData = res.data?.data || res.data;
+    const token = responseData.access_token || responseData.token;
+    const userData = responseData.user;
+
     if (!token) throw new Error('Login failed: no token received');
+
     localStorage.setItem('token', token);
     axios.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+
     if (userData) {
-      setUser(userData);
+      setUser(mapUser(userData));
     }
   };
 
