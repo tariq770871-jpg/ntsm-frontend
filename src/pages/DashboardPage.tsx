@@ -53,18 +53,24 @@ const statusData = [
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [apiWarning, setApiWarning] = useState<string | null>(null);
 
   useEffect(() => {
     if (!API_URL) {
       setLoading(false);
+      setApiWarning('رابط API غير مضبوط');
       return;
     }
     axios.get(`${API_URL}/devices/stats`)
-      .then(res => setStats(res.data))
-      .catch((err) => {
-        console.warn('Failed to load device stats:', err.message);
-        setError('تعذر تحميل إحصائيات الأجهزة');
+      .then(res => {
+        if (res.data?.success && res.data?.data) {
+          setStats(res.data.data);
+        } else if (res.data?.total !== undefined) {
+          setStats(res.data);
+        }
+      })
+      .catch(() => {
+        setApiWarning('وحدة الأجهزة قيد التطوير');
       })
       .finally(() => setLoading(false));
   }, []);
@@ -89,14 +95,11 @@ export default function DashboardPage() {
       <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">لوحة التحكم - إدارة الدعم الفني والصيانة للشبكات</h1>
-          <button onClick={() => window.print()} className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors flex items-center gap-2">
-            <Activity className="w-4 h-4" /> تصدير PDF
-          </button>
         </div>
 
-        {error && (
+        {apiWarning && (
           <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400 text-sm">
-            {error} - يعرض بيانات تجريبية
+            ⚠️ {apiWarning} - تظهر بيانات تجريبية
           </div>
         )}
 
