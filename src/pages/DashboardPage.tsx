@@ -3,6 +3,8 @@ import axios from 'axios';
 import { AlertTriangle, Archive, Wifi, Activity, Server, TrendingUp, Users } from 'lucide-react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 
+const API_URL = import.meta.env.VITE_API_URL || '';
+
 interface Stats {
   total: number;
   online: number;
@@ -19,7 +21,7 @@ function StatCard({ label, value, icon: Icon, color }: { label: string; value: n
   };
 
   return (
-    <div className={`bg-gradient-to-br ${gradients[color]} border rounded-xl p-6 backdrop-blur-sm`}>
+    <div className={`bg-gradient-to-br ${gradients[color] || ''} border rounded-xl p-6 backdrop-blur-sm`}>
       <div className="flex items-center justify-between">
         <div>
           <p className="text-sm opacity-80 text-white">{label}</p>
@@ -51,10 +53,19 @@ const statusData = [
 export default function DashboardPage() {
   const [stats, setStats] = useState<Stats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    axios.get(`${import.meta.env.VITE_API_URL}/devices/stats`)
+    if (!API_URL) {
+      setLoading(false);
+      return;
+    }
+    axios.get(`${API_URL}/devices/stats`)
       .then(res => setStats(res.data))
+      .catch((err) => {
+        console.warn('Failed to load device stats:', err.message);
+        setError('تعذر تحميل إحصائيات الأجهزة');
+      })
       .finally(() => setLoading(false));
   }, []);
 
@@ -67,21 +78,27 @@ export default function DashboardPage() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-slate-900 flex items-center justify-center" dir="rtl">
+      <div className="flex items-center justify-center py-20">
         <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-cyan-500"></div>
       </div>
     );
   }
 
   return (
-    <div className="min-h-screen bg-slate-900 text-white" dir="rtl">
-      <div className="p-6 max-w-7xl mx-auto">
+    <div className="text-white" dir="rtl">
+      <div className="max-w-7xl mx-auto">
         <div className="flex items-center justify-between mb-6">
           <h1 className="text-2xl font-bold text-white">لوحة التحكم - إدارة الدعم الفني والصيانة للشبكات</h1>
           <button onClick={() => window.print()} className="px-4 py-2 bg-cyan-500/20 border border-cyan-500/30 text-cyan-400 rounded-lg hover:bg-cyan-500/30 transition-colors flex items-center gap-2">
             <Activity className="w-4 h-4" /> تصدير PDF
           </button>
         </div>
+
+        {error && (
+          <div className="mb-6 p-4 bg-yellow-500/10 border border-yellow-500/30 rounded-lg text-yellow-400 text-sm">
+            {error} - يعرض بيانات تجريبية
+          </div>
+        )}
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-6">
           {cards.map(card => (
