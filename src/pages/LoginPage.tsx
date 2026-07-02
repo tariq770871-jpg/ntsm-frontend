@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom';
 import { Wifi, Eye, EyeOff, AlertCircle, Loader2 } from 'lucide-react';
 
 export default function LoginPage() {
-  const [phone, setPhone] = useState('');
+  const [username, setUsername] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -17,11 +17,11 @@ export default function LoginPage() {
     setError('');
     setLoading(true);
     try {
-      await login(phone, password);
+      await login(username, password);
       navigate('/dashboard');
     } catch {
       setLoading(false);
-      setError('رقم الهاتف أو كلمة المرور غير صحيحة');
+      setError('اسم المستخدم أو كلمة المرور غير صحيحة');
     }
   };
 
@@ -57,13 +57,13 @@ export default function LoginPage() {
 
           <form onSubmit={handleSubmit} className="space-y-5">
             <div>
-              <label className="block text-sm font-medium text-slate-300 mb-2">رقم الهاتف</label>
+              <label className="block text-sm font-medium text-slate-300 mb-2">اسم المستخدم</label>
               <input
                 type="text"
-                value={phone}
-                onChange={(e) => setPhone(e.target.value)}
+                value={username}
+                onChange={(e) => setUsername(e.target.value)}
                 className="w-full px-4 py-3 bg-slate-900/50 border border-slate-600 rounded-lg text-white placeholder-slate-500 focus:outline-none focus:border-cyan-500 focus:ring-2 focus:ring-cyan-500/20 transition-all text-left"
-                placeholder="أدخل رقم الهاتف"
+                placeholder="أدخل اسم المستخدم"
                 required
               />
             </div>
